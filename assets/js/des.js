@@ -8,9 +8,29 @@
 
   const coloresTurno = ['#008FFB', '#00E396', '#FEB019'];
 
-  function processExcelData(aoa) {
+  // 🔽 Mapa de links CSV por hoja
+  const CSV_LINKS_DESECHO = {
+    "EA888": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHsqHccP2BdDmN8F5dMKC10KSjLsiVw73k7WzEi0zYKEelpeqFmHBiWvzSgHResw/pub?gid=1979686779&single=true&output=csv",
+    "EA211": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHsqHccP2BdDmN8F5dMKC10KSjLsiVw73k7WzEi0zYKEelpeqFmHBiWvzSgHResw/pub?gid=422635422&single=true&output=csv"
+  };
+
+  async function fetchCSV(sheetName) {
+    const csvUrl = CSV_LINKS_DESECHO[sheetName];
+    if(!csvUrl) throw new Error(`No se encontró link CSV para: ${sheetName}`);
+
+    const response = await fetch(csvUrl);
+    if (!response.ok) throw new Error(`Error al cargar CSV de ${sheetName}`);
+
+    const csvText = await response.text();
+    return csvText
+      .trim()
+      .split('\n')
+      .map(row => row.split(','));
+  }
+
+  function processCSVData(aoa) {
     const data = [];
-    for (let i = 1; i < aoa.length; i++) {
+    for (let i = 1; i < aoa.length; i++) { // saltar encabezado
       const row = aoa[i];
       const dia = parseInt(row[0], 10);
       if (isNaN(dia) || dia < 1 || dia > 31) continue;
@@ -53,15 +73,8 @@
       yaxis: { min: 0, max: 60, tickAmount: 6, title: { text: 'Piezas' } },
       annotations: {
         yaxis: [
-          // Línea de meta
-          {
-            y: meta,
-            borderColor: '#F9C01C',
-            
-          },
-          // Rango rojo por debajo de la meta
+          { y: meta, borderColor: '#F9C01C' },
           { y: 0, y2: meta, fillColor: '#ef4444', opacity: 0.15, label: { show: false } },
-          // Rango verde por encima de la meta
           { y: meta, y2: 60, fillColor: '#22c55e', opacity: 0.15, label: { show: false } }
         ]
       },
@@ -73,28 +86,21 @@
     chart.render();
   }
 
-  async function loadAndRenderCharts() {
+  async function loadAndRenderChartsCSV() {
     try {
-      const response = await fetch('../assets/Archivos/Calidad/Desecho.xlsx');
-      const arrayBuffer = await response.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      for (const sheetName of ['EA888', 'EA211']) {
+        const aoa = await fetchCSV(sheetName);
+        const data = processCSVData(aoa);
 
-      ['EA888', 'EA211'].forEach(sheetName => {
-        if (workbook.SheetNames.includes(sheetName)) {
-          const aoa = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: '' });
-          const data = processExcelData(aoa);
-
-          renderTurnoGrafico(sheetName.toLowerCase(), 1, data);
-          renderTurnoGrafico(sheetName.toLowerCase(), 2, data);
-          renderTurnoGrafico(sheetName.toLowerCase(), 3, data);
-        }
-      });
-
+        renderTurnoGrafico(sheetName.toLowerCase(), 1, data);
+        renderTurnoGrafico(sheetName.toLowerCase(), 2, data);
+        renderTurnoGrafico(sheetName.toLowerCase(), 3, data);
+      }
     } catch (error) {
       console.error(error);
-      alert('Error al cargar el archivo Excel. Abre el HTML desde un servidor local.');
+      alert('Error al cargar los CSV: revisa que los links sean correctos y estén públicos.');
     }
   }
 
-  document.addEventListener('DOMContentLoaded', loadAndRenderCharts);
+  document.addEventListener('DOMContentLoaded', loadAndRenderChartsCSV);
 })();

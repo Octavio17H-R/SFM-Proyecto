@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-  const archivoRuta = "https://onedrive.live.com/download?resid=7da3c99f5b22a2d9_EeY8F2FwPFtAmsE2OPaUem0BO70ybiXtRHbQIh4dTMFS3g";
+  const archivoRuta = "https://docs.google.com/spreadsheets/d/1vC-21miKpoU7ijKsZMyhz0QsgEOhwcWV/gviz/tq?tqx=out:csv&sheet=Hoja1";
 
   document.getElementById('loadingMessage').style.display = 'block';
 

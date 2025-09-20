@@ -1,5 +1,12 @@
-// La ruta a tu archivo de Excel
-const EXCEL_FILE_PATH = '../assets/Archivos/Finanzas/fpk.xlsx';
+// 🔽 Mapa de links por hoja/centro de costos
+const CSV_LINKS = {
+  "Corazones": "https://docs.google.com/spreadsheets/d/e/2PACX-1vToRl-z4_Nr9g9Y_-mB7kpl9vovFkjzyOwBc5KZxsOaVJ8CdQlM9ove6b4E1XZnIw/pub?gid=1819146551&single=true&output=csv",
+  "6103": "https://docs.google.com/spreadsheets/d/e/2PACX-1vToRl-z4_Nr9g9Y_-mB7kpl9vovFkjzyOwBc5KZxsOaVJ8CdQlM9ove6b4E1XZnIw/pub?gid=1191090916&single=true&output=csv",
+  "6115": "https://docs.google.com/spreadsheets/d/e/2PACX-1vToRl-z4_Nr9g9Y_-mB7kpl9vovFkjzyOwBc5KZxsOaVJ8CdQlM9ove6b4E1XZnIw/pub?gid=1674800736&single=true&output=csv",
+  "6151": "https://docs.google.com/spreadsheets/d/e/2PACX-1vToRl-z4_Nr9g9Y_-mB7kpl9vovFkjzyOwBc5KZxsOaVJ8CdQlM9ove6b4E1XZnIw/pub?gid=1479499733&single=true&output=csv",
+  "6150": "https://docs.google.com/spreadsheets/d/e/2PACX-1vToRl-z4_Nr9g9Y_-mB7kpl9vovFkjzyOwBc5KZxsOaVJ8CdQlM9ove6b4E1XZnIw/pub?gid=835514949&single=true&output=csv",
+};
+
 
 // Referencias a los elementos de la tabla en el HTML
 const costoRow = document.getElementById('costoRow');
@@ -19,38 +26,39 @@ const centroCostosSelect = document.getElementById("centroCostos");
 // Espera a que el DOM esté cargado
 document.addEventListener('DOMContentLoaded', () => {
   // Cargar el primer centro por defecto
-  loadExcelAndRender(centroCostosSelect.value);
+  loadCSVAndRender(centroCostosSelect.value);
 
   // Cambiar cuando el usuario elige otro centro
   centroCostosSelect.addEventListener("change", () => {
-    loadExcelAndRender(centroCostosSelect.value);
+    loadCSVAndRender(centroCostosSelect.value);
   });
 });
 
-async function loadExcelAndRender(sheetName) {
+async function loadCSVAndRender(sheetName) {
   try {
-    // Carga el archivo de Excel
-    const response = await fetch(EXCEL_FILE_PATH);
-    const arrayBuffer = await response.arrayBuffer();
-    const data = new Uint8Array(arrayBuffer);
-    const workbook = XLSX.read(data, { type: 'array' });
-
-    // Busca la hoja según el Centro de Costos
-    const worksheet = workbook.Sheets[sheetName];
-    if (!worksheet) {
-      alert(`No se encontró la hoja: ${sheetName}`);
+    const csvUrl = CSV_LINKS[sheetName];
+    if(!csvUrl){
+      alert(`No se encontró link CSV para: ${sheetName}`);
       return;
     }
 
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-    jsonData.shift(); // Elimina el encabezado
+    const response = await fetch(csvUrl);
+    if (!response.ok) throw new Error('No se pudo cargar la hoja CSV');
+    const csvText = await response.text();
+
+    const jsonData = csvText
+      .trim()
+      .split('\n')
+      .map(row => row.split(','));
+
+    // Elimina encabezado
+    jsonData.shift();
 
     const costos = [];
     const budgets = [];
     let totalCosto2025 = 0;
     let totalBudget2025 = 0;
 
-    // Itera sobre los datos del Excel para llenar la tabla y los arrays
     for(let i=0; i<12; i++){
       const row = jsonData[i] || [];
       const costo = Number(row[1]) || 0;
@@ -60,23 +68,21 @@ async function loadExcelAndRender(sheetName) {
       totalCosto2025 += costo;
       totalBudget2025 += budget;
 
-      // Llenar tabla
       costoRow.cells[i+1].textContent = costo.toLocaleString('en-US');
       budgetRow.cells[i+1].textContent = budget.toLocaleString('en-US');
     }
 
-    // Actualiza los totales
     totalCostoCell.textContent = totalCosto2025.toLocaleString('en-US');
     totalBudgetCell.textContent = totalBudget2025.toLocaleString('en-US');
     finalAnnualTotalCell.textContent = totalCosto2025.toLocaleString('en-US');
     annualBudgetValue.textContent = totalCosto2025.toLocaleString('en-US') + ' USD';
 
-    // Crea/actualiza los gráficos
     createOrUpdateMonthlyChart(costos, budgets);
     createOrUpdateAnnualChart(totalCosto2025, totalBudget2025);
 
   } catch (error) {
-    console.error("Error cargando Excel o renderizando datos:", error);
+    console.error("Error cargando CSV o renderizando datos:", error);
+    alert("Error cargando la hoja: " + sheetName);
   }
 }
 
@@ -124,7 +130,6 @@ function createOrUpdateAnnualChart(totalCosto2025, totalBudget2025){
   const ctx = document.getElementById('annualChart').getContext('2d');
   if(annualChart) annualChart.destroy();
 
-  // Valores fijos de años anteriores
   const annualData = {
     '2023': 4783598,
     '2024': 3247423,
@@ -133,7 +138,6 @@ function createOrUpdateAnnualChart(totalCosto2025, totalBudget2025){
   const annualLabels = Object.keys(annualData);
   const annualValues = Object.values(annualData);
 
-  // Agrega los datos dinámicos de 2025
   annualLabels.push('2025');
   annualValues.push(totalCosto2025);
 

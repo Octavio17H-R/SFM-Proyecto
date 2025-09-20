@@ -1,5 +1,5 @@
 // La ruta a tu archivo de Excel
-const EXCEL_FILE_PATH = '../assets/Archivos/Finanzas/vbz.xlsx';
+const EXCEL_FILE_PATH = 'https://docs.google.com/spreadsheets/d/1OrBK4aqM3Fb7OKvlnXB1g0bxfmhvTRdc/export?format=xlsx';
 
 // Referencia a la gráfica mensual en el HTML
 const monthlyChartCanvas = document.getElementById('monthlyChart');

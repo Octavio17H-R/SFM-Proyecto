@@ -72,7 +72,7 @@ document.head.appendChild(style);
   // --- Cargar Excel ---
   async function cargarExcel(){
     try{
-      const resp = await fetch('../assets/Archivos/Proceso/cumplimiento.xlsx');
+      const resp = await fetch('https://docs.google.com/spreadsheets/d/1m-f0OTYfX43cAVRw1QROkwVxW2HffKBp/gviz/tq?tqx=out:csv');
       const arrayBuffer = await resp.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type:'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];

@@ -10,10 +10,8 @@
   const subCols = ['PROD']; // Solo PROD
 
   const productosFijos = [
-    { nombre: 'EA888 EVO', meta: '2 hrs' },
-    { nombre: 'EA888 BZ', meta: '2 hrs' },
-    { nombre: 'EA888 Serie', meta: '2 hrs' },
-    { nombre: 'EA211', meta: '2 hrs' }
+    { nombre: 'EA888', meta: '1400' },
+    { nombre: 'EA211', meta: '1100' }
   ];
 
 // --- Inyectar CSS exclusivo de la tabla ---
